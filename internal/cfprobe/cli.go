@@ -39,7 +39,7 @@ func Execute(args []string, buildVersion string) error {
 	case "upgrade-apply":
 		return ApplyScheduledUpdate(buildVersion)
 	case "version", "-v", "--version":
-		fmt.Printf("CF-Server-Monitor Go Probe %s\n", buildVersion)
+		fmt.Printf("ProbeDeck Go Probe %s\n", buildVersion)
 		return nil
 	case "help", "-h", "--help":
 		printUsage(os.Stdout)

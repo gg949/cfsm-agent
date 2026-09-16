@@ -190,7 +190,7 @@ func Run(configFile string, debug bool, version string) error {
 	a.basic = collectBasicStats()
 	a.basicAt = time.Now()
 
-	a.log.info("CF-Server-Monitor Go Probe started version=%s platform=%s config=%s", version, platformName(), paths.ConfigFile)
+	a.log.info("ProbeDeck Go Probe started version=%s platform=%s config=%s", version, platformName(), paths.ConfigFile)
 	a.log.debugf("config id=%s url=%s report_interval=%ds collect_interval=%ds reset_day=%d connection_mode=%s ping_mode=%s interface=%s auto_update=%v",
 		cfg.ServerID, cfg.WorkerURL, cfg.ReportInterval, cfg.CollectInterval, cfg.ResetDay, cfg.ConnectionMode, cfg.PingMode, firstNonEmpty(cfg.Interface, "auto"), cfg.AutoUpdate)
 

@@ -53,7 +53,7 @@ if ($GitHubProxy) {
 }
 
 $tmp = Join-Path $env:TEMP "cf-probe-bootstrap-$PID.exe"
-Write-Host "CF-Server-Monitor Go Probe bootstrap"
+Write-Host "ProbeDeck Go Probe bootstrap"
 Write-Host "  repo    : $Repo"
 Write-Host "  version : $InstallVersion"
 Write-Host "  target  : windows/$arch"

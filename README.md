@@ -1,6 +1,6 @@
-# cfsm-agent
+# ProbeDeck Go Probe（cfsm-agent）
 
-`cfsm-agent` 是 CF-Server-Monitor 的 Go Probe Agent，安装后会以 `cf-probe` 服务运行，定时采集服务器资源、网络流量和探测数据，并上报到指定的 Worker 地址。
+`cfsm-agent` 是 ProbeDeck 的探针程序（Go Probe Agent），安装后会以 `cf-probe` 服务运行，定时采集服务器资源、网络流量和探测数据，并上报到面板后端。
 
 ## 快速安装
 
@@ -8,25 +8,25 @@
 
 - `SERVER_ID`：服务器 ID
 - `SECRET`：服务器密钥
-- `WORKER_URL`：Worker 上报地址，例如 `https://example.com/update`
+- `WORKER_URL`：面板上报地址，例如 `https://example.com/update`
 
 Linux、OpenWrt、Synology DSM、FreeBSD、macOS 可使用安装脚本自动下载当前系统对应的最新 release：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.sh | sh -s -- install -id=SERVER_ID -secret=SECRET -url=WORKER_URL
+curl -fsSL https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.sh | sh -s -- install -id=SERVER_ID -secret=SECRET -url=WORKER_URL
 ```
 
 如果系统没有 `curl`，可使用 `wget`：
 
 ```bash
-wget -O- https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.sh | sh -s -- install -id=SERVER_ID -secret=SECRET -url=WORKER_URL
+wget -O- https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.sh | sh -s -- install -id=SERVER_ID -secret=SECRET -url=WORKER_URL
 ```
 
 ### 普通用户安装（非 root）
 仅支持 `systemd --user` 的 Linux 可使用非 root 安装；执行安装时会使用当前用户，不会新建用户；二进制、配置和流量文件会写入 `~/.cf-probe/`，自启动使用 `systemd --user`。Synology DSM、OpenWrt、Alpine/OpenRC 以及其他不支持 `systemd --user` 的系统请使用 root 权限安装。部分 Linux 系统从旧的 root Go 版切换到非 root 安装时，建议先在 root 下卸载旧版：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.sh | sh -s -- uninstall
+curl -fsSL https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.sh | sh -s -- uninstall
 ```
 
 macOS 固定使用当前普通用户安装，写入 `~/.cf-probe/`，自启动使用 `~/Library/LaunchAgents/`，不要使用 `sudo/root` 安装。macOS 如果检测到旧的 root/system 版本，会提示先执行 `sudo /usr/local/bin/cf-probe uninstall` 清理旧版，再以普通用户安装。
@@ -59,7 +59,7 @@ passwd cfsm
 
 ```powershell
 $script = "$env:TEMP\install-cf-probe.ps1"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.ps1" -OutFile $script -UseBasicParsing
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.ps1" -OutFile $script -UseBasicParsing
 PowerShell -ExecutionPolicy Bypass -File $script install -id=SERVER_ID -secret=SECRET -url=WORKER_URL
 ```
 
@@ -70,13 +70,13 @@ Windows 上如果安装时开启 `-auto_update=1`，自动更新会下载并执�
 默认安装最新 release。需要指定版本时：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.sh | sh -s -- install --install-version=v1.0.10 -id=SERVER_ID -secret=SECRET -url=WORKER_URL
+curl -fsSL https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.sh | sh -s -- install --install-version=v1.0.10 -id=SERVER_ID -secret=SECRET -url=WORKER_URL
 ```
 
 GitHub 下载较慢时，可以配置代理前缀：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.sh | sh -s -- install --install-ghproxy=https://gh-proxy.example.com -id=SERVER_ID -secret=SECRET -url=WORKER_URL
+curl -fsSL https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.sh | sh -s -- install --install-ghproxy=https://gh-proxy.example.com -id=SERVER_ID -secret=SECRET -url=WORKER_URL
 ```
 
 ## 常用安装参数
@@ -85,7 +85,7 @@ curl -fsSL https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.
 | --- | --- | --- |
 | `-id=SERVER_ID` | 服务器 ID，首次安装必填 | 无 |
 | `-secret=SECRET` | 服务器密钥，首次安装必填 | 无 |
-| `-url=WORKER_URL` | Worker 上报地址，首次安装必填 | 无 |
+| `-url=WORKER_URL` | 面板上报地址，首次安装必填 | 无 |
 | `-interval=N` | 上报间隔，单位秒 | `60` |
 | `-collect_interval=N` | 采样间隔，单位秒；WSS auto 开启时为 `0` 或大于 `WSS_REPORT_INTERVAL` 会按 `WSS_REPORT_INTERVAL` 采样 | `0` |
 | `-ct=HOST` | 电信测试节点，可写 `host` 或 `host:port` | 空 |
@@ -183,7 +183,7 @@ Get-Content "C:\ProgramData\cf-probe\cf-probe.log" -Wait
 Linux、OpenWrt、Synology DSM、FreeBSD、macOS：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.sh | sh -s -- uninstall
+curl -fsSL https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.sh | sh -s -- uninstall
 ```
 
 普通用户执行卸载只清理当前用户的 `~/.cf-probe/`、支持 `systemd --user` 的 Linux 用户服务或 macOS LaunchAgent 自启动项；Synology DSM、OpenWrt、Alpine/OpenRC 以及其他系统级安装请使用 root 权限卸载。root 执行卸载清理系统级安装。macOS root 卸载会同时清理 sudo 调用者对应的用户版安装；旧 root/system 版请先执行 `sudo /usr/local/bin/cf-probe uninstall` 清理，再以普通用户安装。
@@ -192,7 +192,7 @@ Windows 请使用管理员权限打开 PowerShell：
 
 ```powershell
 $script = "$env:TEMP\install-cf-probe.ps1"
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/huilang-me/cfsm-agent/main/install.ps1" -OutFile $script -UseBasicParsing
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/gg949/cfsm-agent/main/install.ps1" -OutFile $script -UseBasicParsing
 PowerShell -ExecutionPolicy Bypass -File $script uninstall
 ```
 
@@ -210,7 +210,7 @@ WSS 建连成功后，Agent 会等待服务端 hello：
 
 第一条有效 WSS 上报发送的就是旧 POST body，不改变 payload 结构；后续同一连接内也继续发送相同结构。旧版接收端仍可按 `REPORT_INTERVAL` 接收 `POST` fallback，`Content-Type` 为 `application/json`。为了兼容旧版接收端，`metrics` 内大多数基础指标仍以字符串上报；新增的 `disk` 磁盘 IO 对象使用数值类型。
 
-WSS 可用且 `CONNECTION_MODE=auto` 时，Agent 使用服务端配置的 `WSS_REPORT_INTERVAL` 发送实时上报，默认 2 秒，可配置为 1-5 秒；当 `COLLECT_INTERVAL=0` 或大于该值时，实际采样间隔同步使用 `WSS_REPORT_INTERVAL`。服务端 ack 可通过 `nextWssReportAfterMs` 动态调整下一次 WSS 上报间隔，前端有实时订阅时使用该配置值；无前端访问时改用 `REPORT_INTERVAL`，但最低为 60 秒。`CONNECTION_MODE=http` 时不启动 WSS，只按 `REPORT_INTERVAL` 走 `POST /update`。服务端 `/update` WSS 使用 Durable Object 标准 WebSocket API 接收 Agent 上报，让高频业务帧按 WebSocket incoming messages 口径计量；代价是 Agent 长连接存在时 DO 会保持非休眠状态并产生 duration（GB-s）。Agent 不根据服务端 D1 写入节流丢弃实时样本，持久化频率由服务端按 `server.report_interval` 控制。WSS 高频发送只刷新 CPU、内存、网卡累计流量和网速这些轻量实时字段；磁盘容量、磁盘 IO、GPU、进程数、连接数、月流量文件统计等完整指标仍按 `REPORT_INTERVAL` 或原有探测周期刷新，并在 WSS 实时包中复用最近一次缓存值。WSS 不可用时才 fallback 到 POST；WSS 写失败会立即尝试一次 POST fallback，后续 POST 失败重试按 `REPORT_INTERVAL` 限流，避免弱网时打爆 Worker。WSS 握手整体受 10 秒 deadline 约束，连接建立后如果超过当前 WSS 上报间隔加 15 秒仍未收到服务端帧，会主动关闭连接并触发兜底流程。普通 WSS 网络错误使用指数退避重连，最小 60 秒、最大 5 分钟；认证或配置类错误（HTTP `401`/`403`/`404`、WebSocket close code `1008`、服务端 `error` 帧）会同时暂停 WSS 和 POST fallback 120 秒，避免持续消耗服务端额度。WSS 时段关闭是例外：服务端会返回 `409` 和 `wss_schedule_inactive`，Agent 临时改用 POST，不写入本地 `CONNECTION_MODE`，并在后续正常 POST 响应提示 `X-Agent-Wss-Mode: active` 时立即恢复 WSS。该能力要求 Agent `v1.0.10+`。相关日志会明确使用 `WSS connected`、`WSS ack`、`WSS error`、`WSS retry delayed`、`POST fallback delayed` 等关键字区分状态。
+WSS 可用且 `CONNECTION_MODE=auto` 时，Agent 使用服务端配置的 `WSS_REPORT_INTERVAL` 发送实时上报，默认 2 秒，可配置为 1-5 秒；当 `COLLECT_INTERVAL=0` 或大于该值时，实际采样间隔同步使用 `WSS_REPORT_INTERVAL`。服务端 ack 可通过 `nextWssReportAfterMs` 动态调整下一次 WSS 上报间隔，前端有实时订阅时使用该配置值；无前端访问时改用 `REPORT_INTERVAL`，但最低为 60 秒。`CONNECTION_MODE=http` 时不启动 WSS，只按 `REPORT_INTERVAL` 走 `POST /update`。服务端 `/update` WSS 使用 Durable Object 标准 WebSocket API 接收 Agent 上报，让高频业务帧按 WebSocket incoming messages 口径计量；代价是 Agent 长连接存在时 DO 会保持非休眠状态并产生 duration（GB-s）。Agent 不根据服务端 D1 写入节流丢弃实时样本，持久化频率由服务端按 `server.report_interval` 控制。WSS 高频发送只刷新 CPU、内存、网卡累计流量和网速这些轻量实时字段；磁盘容量、磁盘 IO、GPU、进程数、连接数、月流量文件统计等完整指标仍按 `REPORT_INTERVAL` 或原有探测周期刷新，并在 WSS 实时包中复用最近一次缓存值。WSS 不可用时才 fallback 到 POST；WSS 写失败会立即尝试一次 POST fallback，后续 POST 失败重试按 `REPORT_INTERVAL` 限流，避免弱网时打爆服务端。WSS 握手整体受 10 秒 deadline 约束，连接建立后如果超过当前 WSS 上报间隔加 15 秒仍未收到服务端帧，会主动关闭连接并触发兜底流程。普通 WSS 网络错误使用指数退避重连，最小 60 秒、最大 5 分钟；认证或配置类错误（HTTP `401`/`403`/`404`、WebSocket close code `1008`、服务端 `error` 帧）会同时暂停 WSS 和 POST fallback 120 秒，避免持续消耗服务端额度。WSS 时段关闭是例外：服务端会返回 `409` 和 `wss_schedule_inactive`，Agent 临时改用 POST，不写入本地 `CONNECTION_MODE`，并在后续正常 POST 响应提示 `X-Agent-Wss-Mode: active` 时立即恢复 WSS。该能力要求 Agent `v1.0.10+`。相关日志会明确使用 `WSS connected`、`WSS ack`、`WSS error`、`WSS retry delayed`、`POST fallback delayed` 等关键字区分状态。
 
 服务端 ack 示例：
 
@@ -356,13 +356,13 @@ WSS 也支持服务端下发动态配置，配置内容复用旧 POST 响应里�
 | 字段 | 类型 | 说明 |
 | --- | --- | --- |
 | `local_ts` | number | 本次组包时的本机 Unix 毫秒墙钟 |
-| `accurate_ts` | number/null | 根据最近一次 Worker 响应头 `Date` 时间样本，以单调时钟推算的 Unix 毫秒时间；首次校准前为 `null` |
+| `accurate_ts` | number/null | 根据最近一次 服务端响应头 `Date` 时间样本，以单调时钟推算的 Unix 毫秒时间；首次校准前为 `null` |
 | `offset_ms` | number/null | `accurate_ts - local_ts`；正数表示本机慢，负数表示本机快 |
 | `source` | string/null | 成功校准后为 `date` |
 | `round_trip_ms` | number/null | 最近一次成功校准请求的往返耗时 |
 | `sample_age_ms` | number/null | 最近校准样本到本次组包的单调时钟年龄 |
 
-Agent 只使用 Worker 成功 HTTP 响应里的 `Date` 头做时间校准，包括 POST 响应和 WSS 握手响应。响应头示例：`Date: Thu, 13 Aug 2026 00:23:22 GMT`。Agent 会按该格式解析为 Unix 毫秒时间戳，并结合本次请求 RTT 锚定到单调时钟。若新 `Date` 样本与当前已校准时间的差值在 20 秒内，则跳过更新；首次校准、校准过期或差值超过 20 秒时才覆盖。校准样本最长使用 24 小时。上报前会用同一锚点换算 `samples[].ts`，并校正 `metrics.boot_time`。Agent 不修改系统时间。
+Agent 只使用 服务端成功 HTTP 响应里的 `Date` 头做时间校准，包括 POST 响应和 WSS 握手响应。响应头示例：`Date: Thu, 13 Aug 2026 00:23:22 GMT`。Agent 会按该格式解析为 Unix 毫秒时间戳，并结合本次请求 RTT 锚定到单调时钟。若新 `Date` 样本与当前已校准时间的差值在 20 秒内，则跳过更新；首次校准、校准过期或差值超过 20 秒时才覆盖。校准样本最长使用 24 小时。上报前会用同一锚点换算 `samples[].ts`，并校正 `metrics.boot_time`。Agent 不修改系统时间。
 
 `metrics` 字段：
 
@@ -440,7 +440,7 @@ WSS 握手会携带标准 WebSocket Upgrade 头，并附带以下 Agent 头：
 | `X-Agent-Version` | 当前 Agent 版本 |
 | `X-Agent-Config-Md5` | 本地保存的远端配置 MD5；为空时为 `none` |
 
-当 Worker 下发 `rx_correction` 或 `tx_correction` 后，Agent 会额外发送一次流量校正确认：
+当服务端下发 `rx_correction` 或 `tx_correction` 后，Agent 会额外发送一次流量校正确认：
 
 ```json
 {
@@ -458,7 +458,7 @@ WSS 握手会携带标准 WebSocket Upgrade 头，并附带以下 Agent 头：
 需要 Go `1.24` 或更新版本。
 
 ```bash
-git clone https://github.com/huilang-me/cfsm-agent.git
+git clone https://github.com/gg949/cfsm-agent.git
 cd cfsm-agent
 go build -trimpath -ldflags "-s -w -X main.version=$(git describe --tags --always --dirty)" -o cf-probe ./cmd/cf-probe
 ```

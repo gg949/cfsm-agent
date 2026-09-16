@@ -163,7 +163,7 @@ tmp="${tmp_dir%/}/cf-probe-bootstrap.$$"
 tmp_err="$tmp.err"
 trap 'rm -f "$tmp" "$tmp_err"' EXIT INT TERM
 
-log "CF-Server-Monitor Go Probe bootstrap"
+log "ProbeDeck Go Probe bootstrap"
 log "  repo    : $REPO"
 log "  version : $INSTALL_VERSION"
 log "  target  : $os_name/$arch_name"

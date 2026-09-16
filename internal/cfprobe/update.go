@@ -22,7 +22,7 @@ import (
 const (
 	autoUpdateCheckInterval  = 6 * time.Hour
 	autoUpdateLockTTL        = 30 * time.Minute
-	defaultUpdateRepo        = "huilang-me/cfsm-agent"
+	defaultUpdateRepo        = "gg949/cfsm-agent"
 	githubAPIBaseURL         = "https://api.github.com"
 	snapshotVersionPrefix    = "Snapshot-"
 	updateChecksumsAssetName = "checksums.txt"

@@ -234,7 +234,7 @@ func printBanner(version string) {
 		version = legacyAgentVersion
 	}
 	fmt.Println("===========================================")
-	fmt.Println("    CF-Server-Monitor Go Probe")
+	fmt.Println("    ProbeDeck Go Probe")
 	fmt.Printf("    Version: %s\n", version)
 	fmt.Println("===========================================")
 }
@@ -275,7 +275,7 @@ func ensureLogFile(path string) error {
 func printInstallSummary(paths Paths, opts InstallOptions) {
 	fmt.Println("")
 	fmt.Println("===========================================")
-	fmt.Println("    CF-Server-Monitor Go Probe 安装成功")
+	fmt.Println("    ProbeDeck Go Probe 安装成功")
 	fmt.Println("===========================================")
 	fmt.Printf("  Service     : %s\n", paths.ServiceName)
 	fmt.Printf("  Binary      : %s\n", paths.BinaryFile)
@@ -488,7 +488,7 @@ func writeSystemdService(paths Paths, debug bool) error {
 		debugArg = "1"
 	}
 	content := fmt.Sprintf(`[Unit]
-Description=CF Server Monitor Probe Agent
+Description=ProbeDeck Probe Agent
 After=network.target network-online.target
 Wants=network-online.target
 
@@ -519,7 +519,7 @@ func writeSystemdUserService(paths Paths, debug bool) error {
 		debugArg = "1"
 	}
 	content := fmt.Sprintf(`[Unit]
-Description=CF Server Monitor Probe Agent
+Description=ProbeDeck Probe Agent
 After=default.target
 
 [Service]
@@ -540,8 +540,8 @@ WantedBy=default.target
 func writeOpenRCService(paths Paths, debug bool) error {
 	return writeFileExecutable("/etc/init.d/"+paths.ServiceName, fmt.Sprintf(`#!/sbin/openrc-run
 
-name="CF Server Monitor Probe Agent"
-description="CF Server Monitor Probe Agent"
+name="ProbeDeck Probe Agent"
+description="ProbeDeck Probe Agent"
 command="%s"
 command_args="run -debug=%s"
 pidfile="/run/%s.pid"
@@ -620,7 +620,7 @@ func writeLaunchdService(paths Paths, debug bool) error {
 }
 
 func writeUpstartService(paths Paths, debug bool) error {
-	return writeFileExecutable("/etc/init/"+paths.ServiceName+".conf", fmt.Sprintf(`description "CF Server Monitor Probe Agent"
+	return writeFileExecutable("/etc/init/"+paths.ServiceName+".conf", fmt.Sprintf(`description "ProbeDeck Probe Agent"
 
 start on filesystem or runlevel [2345]
 stop on runlevel [!2345]

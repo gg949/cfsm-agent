@@ -1,4 +1,4 @@
-module github.com/huilang-me/cfsm-agent
+module github.com/gg949/cfsm-agent
 
 go 1.26.8
 

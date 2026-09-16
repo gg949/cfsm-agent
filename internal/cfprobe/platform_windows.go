@@ -578,7 +578,7 @@ func windowsScheduledTaskXML(paths Paths, debug bool) (string, error) {
 		XMLNS:   windowsTaskNamespace,
 		Version: "1.4",
 		RegistrationInfo: windowsTaskRegistrationInfo{
-			Description: "CF Server Monitor Probe Agent",
+			Description: "ProbeDeck Probe Agent",
 		},
 		Triggers: windowsTaskTriggers{
 			BootTrigger:  windowsTaskEnabledTrigger{Enabled: true},

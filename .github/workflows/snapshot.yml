@@ -1,0 +1,113 @@
+name: Publish Snapshot
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapshot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Ensure current main
+        run: |
+          set -euo pipefail
+          git fetch --no-tags --depth=1 origin main
+          main_sha="$(git rev-parse FETCH_HEAD)"
+          if [ "$GITHUB_SHA" != "$main_sha" ]; then
+            echo "Snapshot skipped because main moved."
+            echo "Workflow SHA: $GITHUB_SHA"
+            echo "Current main: $main_sha"
+            exit 1
+          fi
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build snapshot binaries
+        id: build
+        run: |
+          set -euo pipefail
+          VERSION="Snapshot-$(date -u +%y%m%d%H%M)"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          mkdir -p dist
+          LDFLAGS="-s -w -X main.version=${VERSION}"
+
+          build_one() {
+            goos="$1"
+            goarch="$2"
+            suffix="$3"
+            goarm="${4:-}"
+            output="dist/cf-probe-${goos}-${suffix}"
+            if [ "$goos" = "windows" ]; then
+              output="${output}.exe"
+            fi
+            echo "Building ${goos}/${goarch} -> ${output}"
+            GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" CGO_ENABLED=0 \
+              go build -trimpath -ldflags="$LDFLAGS" -o "$output" ./cmd/cf-probe
+          }
+
+          build_one linux amd64 amd64
+          build_one linux arm64 arm64
+          build_one linux 386 386
+          build_one linux arm armv5 5
+          build_one linux arm armv6 6
+          build_one linux arm armv7 7
+          build_one linux loong64 loong64
+          build_one freebsd amd64 amd64
+          build_one freebsd arm64 arm64
+          build_one freebsd 386 386
+          build_one freebsd arm arm
+          build_one darwin amd64 amd64
+          build_one darwin arm64 arm64
+          build_one windows amd64 amd64
+          build_one windows arm64 arm64
+          build_one windows 386 386
+
+          sha256sum dist/* > dist/checksums.txt
+
+      - name: Publish snapshot release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          if gh release view "$VERSION" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            gh release delete "$VERSION" --repo "${{ github.repository }}" --cleanup-tag --yes
+          fi
+
+          gh release create "$VERSION" \
+            --repo "${{ github.repository }}" \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION" \
+            --notes "Automated snapshot build ${VERSION} from ${GITHUB_SHA}." \
+            --prerelease \
+            dist/*
+
+          gh release list \
+            --repo "${{ github.repository }}" \
+            --limit 1000 \
+            --json tagName,isPrerelease \
+            --jq '.[] | select(.isPrerelease and (.tagName | startswith("Snapshot-"))) | .tagName' |
+          while IFS= read -r tag; do
+            if [ -z "$tag" ] || [ "$tag" = "$VERSION" ]; then
+              continue
+            fi
+            gh release delete "$tag" --repo "${{ github.repository }}" --cleanup-tag --yes
+          done
+

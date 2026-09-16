@@ -1,0 +1,68 @@
+name: Release Binaries
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build release binaries
+        env:
+          VERSION: ${{ github.event.release.tag_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          LDFLAGS="-s -w -X main.version=${VERSION}"
+
+          build_one() {
+            goos="$1"
+            goarch="$2"
+            suffix="$3"
+            goarm="${4:-}"
+            output="dist/cf-probe-${goos}-${suffix}"
+            if [ "$goos" = "windows" ]; then
+              output="${output}.exe"
+            fi
+            echo "Building ${goos}/${goarch} -> ${output}"
+            GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" CGO_ENABLED=0 \
+              go build -trimpath -ldflags="$LDFLAGS" -o "$output" ./cmd/cf-probe
+          }
+
+          build_one linux amd64 amd64
+          build_one linux arm64 arm64
+          build_one linux 386 386
+          build_one linux arm armv5 5
+          build_one linux arm armv6 6
+          build_one linux arm armv7 7
+          build_one linux loong64 loong64
+          build_one freebsd amd64 amd64
+          build_one freebsd arm64 arm64
+          build_one freebsd 386 386
+          build_one freebsd arm arm
+          build_one darwin amd64 amd64
+          build_one darwin arm64 arm64
+          build_one windows amd64 amd64
+          build_one windows arm64 arm64
+          build_one windows 386 386
+
+          sha256sum dist/* > dist/checksums.txt
+
+      - name: Upload assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/* --repo "${{ github.repository }}" --clobber
+

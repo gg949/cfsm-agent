@@ -1,0 +1,70 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Vet
+        run: go vet ./...
+
+      - name: Test
+        run: go test ./...
+
+  cross-compile-smoke:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Cross compile representative targets
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          VERSION="ci-${GITHUB_SHA::7}"
+          LDFLAGS="-s -w -X main.version=${VERSION}"
+
+          build_one() {
+            goos="$1"
+            goarch="$2"
+            suffix="$3"
+            goarm="${4:-}"
+            output="dist/cf-probe-${goos}-${suffix}"
+            if [ "$goos" = "windows" ]; then
+              output="${output}.exe"
+            fi
+            echo "Building ${goos}/${goarch} -> ${output}"
+            GOOS="$goos" GOARCH="$goarch" GOARM="$goarm" CGO_ENABLED=0 \
+              go build -trimpath -ldflags="$LDFLAGS" -o "$output" ./cmd/cf-probe
+          }
+
+          build_one linux amd64 amd64
+          build_one linux arm64 arm64
+          build_one linux arm armv7 7
+          build_one linux loong64 loong64
+          build_one freebsd amd64 amd64
+          build_one darwin arm64 arm64
+          build_one windows amd64 amd64
+

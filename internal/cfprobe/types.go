@@ -12,6 +12,11 @@ const (
 	defaultWSSReportIntervalSec = 2
 	minWSSReportIntervalSec     = 1
 	maxWSSReportIntervalSec     = 5
+	// maxPendingSamples 限制上报失败期间本地缓存的样本数。
+	// 采集按 collect_interval 持续入队，只有上报成功才清空；面板长期不可达时
+	// 若无上限会无限增长（实测约 8.6MB/天 @2s 采集）。超限丢弃最旧样本——
+	// 面板恢复后本次上报仍带最近 N 条，历史图表由面板侧按 received 时间补。
+	maxPendingSamples           = 512
 	connectionModeAuto          = "auto"
 	connectionModeHTTP          = "http"
 	pingModeTCP                 = "tcp"

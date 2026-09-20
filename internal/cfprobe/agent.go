@@ -465,6 +465,10 @@ func (a *Agent) tick() {
 			at:      now,
 			metrics: sampleMetricsToMap(m),
 		})
+		// 上报持续失败时丢弃最旧样本，防止缓冲无限增长（见 maxPendingSamples 注释）
+		if len(a.samples) > maxPendingSamples {
+			a.samples = a.samples[len(a.samples)-maxPendingSamples:]
+		}
 		a.lastSample = now
 	}
 	if shouldWSSReport || shouldPostReport {

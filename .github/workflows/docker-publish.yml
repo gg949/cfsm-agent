@@ -60,7 +60,9 @@ jobs:
           }
           build_one linux amd64
           build_one linux arm64
-          ls -lh dist/
+          # Dockerfile 从构建上下文根 COPY 二进制，这里挪到根目录
+          mv dist/cf-probe-linux-amd64 dist/cf-probe-linux-arm64 ./
+          ls -lh cf-probe-linux-*
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3

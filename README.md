@@ -215,6 +215,20 @@ docker run -d \
 
 三项环境变量必填（面板「服务器」页添加服务器后获取）；可选变量、数据持久化、升级方式与 Unraid 模板要点见 [docker.md](docker.md)。
 
+### 容器图标（Unraid / 1Panel / Portainer）
+
+Docker 管理面板里容器默认显示灰色问号，可手动指定 Icon URL 换成项目图标：
+
+| 图标 | Icon URL |
+| --- | --- |
+| 🛡️ ProbeDeck 盾牌（默认） | `https://raw.githubusercontent.com/gg949/cfsm-agent/main/docker/icon.png` |
+| 🐳 Docker 鲸鱼（备选） | `https://raw.githubusercontent.com/gg949/cfsm-agent/main/docker/icon-docker.png` |
+
+**Unraid**：Docker 页 → 点 `cf-probe` 容器 → **Icon URL** 填上表地址 → Apply。
+**1Panel**：容器 → 编辑 → 图标 URL。**Portainer**：容器编辑界面的图标字段。
+
+> 图标只影响 Docker 管理面板里的容器列表显示，与面板网站的 favicon 无关。
+
 ## 上报数据说明
 
 Agent 优先使用 WebSocket 上报，并保留旧版 `POST` fallback。配置中的 `WORKER_URL` 仍填写 HTTP(S) 上报地址，例如 `https://example.com/update`；Agent 会把 `https://` 转为 `wss://`、把 `http://` 转为 `ws://`，路径和查询参数保持不变。WebSocket 握手使用标准 `GET + Upgrade`。

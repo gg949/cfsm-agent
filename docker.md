@@ -65,6 +65,19 @@ docker logs -f cf-probe
 - 必填环境变量：`SERVER_ID` / `SECRET` / `WORKER_URL`
 - 挂载：Host Path `/mnt/user/appdata/cf-probe` → Container Path `/etc/cf-probe`（RW）
 
+## 容器图标（Icon URL）
+
+Unraid / 1Panel / Portainer 的 Docker 列表里，容器默认是灰色问号方块。在容器的 **Icon URL** 填下面的地址即可换成项目图标：
+
+| 图标 | Icon URL |
+| --- | --- |
+| 🛡️ ProbeDeck 盾牌（默认推荐） | `https://raw.githubusercontent.com/gg949/cfsm-agent/main/docker/icon.png` |
+| 🐳 Docker 鲸鱼（备选） | `https://raw.githubusercontent.com/gg949/cfsm-agent/main/docker/icon-docker.png` |
+
+**Unraid**：Docker 页 → 点 `cf-probe` 容器 → **Icon URL** → 填表内地址 → Apply。
+
+> 图标只影响 Docker 管理面板的容器列表显示，与 ProbeDeck 面板网站的 favicon 无关，互不影响。
+
 ## docker compose
 
 仓库根有 `docker-compose.yml` 示例，改掉三个占位值后 `docker compose up -d` 即可。

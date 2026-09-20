@@ -1,0 +1,93 @@
+name: Build and Publish Docker Image
+
+# 探针 Docker 镜像（Docker Hub 不需要——直接发 GHCR，与面板镜像同一 registry）
+# 触发方式：发 Release 自动构建（tag 即版本号）+ 手动触发
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '镜像标签（例如 v1.0.17 或 latest）'
+        required: true
+        default: latest
+
+env:
+  IMAGE: ghcr.io/gg949/cfsm-agent
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Resolve version
+        id: vars
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="${{ github.event.inputs.version }}"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "构建版本: ${VERSION}"
+
+      - name: Build binaries (linux only)
+        env:
+          VERSION: ${{ steps.vars.outputs.version }}
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          LDFLAGS="-s -w -X main.version=${VERSION}"
+          build_one() {
+            goos="$1"; goarch="$2"
+            output="dist/cf-probe-${goos}-${goarch}"
+            echo "Building ${goos}/${goarch} -> ${output}"
+            GOOS="${goos}" GOARCH="${goarch}" CGO_ENABLED=0 \
+              go build -trimpath -ldflags="${LDFLAGS}" -o "${output}" ./cmd/cf-probe
+          }
+          build_one linux amd64
+          build_one linux arm64
+          ls -lh dist/
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push (amd64 + arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.version }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Verify manifest
+        run: |
+          docker buildx imagetools inspect "${{ env.IMAGE }}:${{ steps.vars.outputs.version }}"

@@ -1,0 +1,23 @@
+# ProbeDeck 探针 Docker 部署示例
+# 用法：把 <服务器ID>/<服务器密钥>/<面板地址> 换成面板里实际的值后
+#   docker compose up -d
+services:
+  cf-probe:
+    image: ghcr.io/gg949/cfsm-agent:latest
+    container_name: cf-probe
+    restart: unless-stopped
+    environment:
+      # ── 必填 ──
+      SERVER_ID: "<服务器ID>"
+      SECRET: "<服务器密钥>"
+      WORKER_URL: "https://<面板地址>/update"
+      # ── 可选 ──
+      # REPORT_INTERVAL: "60"
+      # COLLECT_INTERVAL: "0"
+      # CONNECTION_MODE: "auto"
+      # PING_MODE: "tcp"
+      # RESET_DAY: "1"
+      # INTERFACE: ""
+      # DEBUG: "0"
+    volumes:
+      - ./data:/etc/cf-probe

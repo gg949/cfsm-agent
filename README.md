@@ -198,6 +198,23 @@ PowerShell -ExecutionPolicy Bypass -File $script uninstall
 
 卸载会清理当前 Go 版默认安装创建的固定位置和自启动项，不处理旧脚本或手动放置到其他路径的文件。
 
+## Docker 安装
+
+适合 Unraid、群晖 Container Manager、Portainer 等 Docker 环境（不需要 systemd）。镜像：`ghcr.io/gg949/cfsm-agent`（支持 amd64 / arm64）。
+
+```bash
+docker run -d \
+  --name cf-probe \
+  --restart unless-stopped \
+  -e SERVER_ID=<服务器ID> \
+  -e SECRET=<服务器密钥> \
+  -e WORKER_URL=https://<面板地址>/update \
+  -v /opt/cf-probe:/etc/cf-probe \
+  ghcr.io/gg949/cfsm-agent:latest
+```
+
+三项环境变量必填（面板「服务器」页添加服务器后获取）；可选变量、数据持久化、升级方式与 Unraid 模板要点见 [docker.md](docker.md)。
+
 ## 上报数据说明
 
 Agent 优先使用 WebSocket 上报，并保留旧版 `POST` fallback。配置中的 `WORKER_URL` 仍填写 HTTP(S) 上报地址，例如 `https://example.com/update`；Agent 会把 `https://` 转为 `wss://`、把 `http://` 转为 `ws://`，路径和查询参数保持不变。WebSocket 握手使用标准 `GET + Upgrade`。

@@ -229,6 +229,16 @@ Docker 管理面板里容器默认显示灰色问号，可手动指定 Icon URL 
 
 > 图标只影响 Docker 管理面板里的容器列表显示，与面板网站的 favicon 无关。
 
+### 卸载
+
+```bash
+docker stop cf-probe && docker rm cf-probe
+# 可选：docker rmi ghcr.io/gg949/cfsm-agent:latest
+# 可选：rm -rf /opt/cf-probe   # 配置和流量计数
+```
+
+面板「删除服务器」弹窗的目标系统选 **Docker / Unraid** 会生成同一条命令。
+
 ## 上报数据说明
 
 Agent 优先使用 WebSocket 上报，并保留旧版 `POST` fallback。配置中的 `WORKER_URL` 仍填写 HTTP(S) 上报地址，例如 `https://example.com/update`；Agent 会把 `https://` 转为 `wss://`、把 `http://` 转为 `ws://`，路径和查询参数保持不变。WebSocket 握手使用标准 `GET + Upgrade`。

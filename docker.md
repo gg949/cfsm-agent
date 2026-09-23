@@ -49,6 +49,16 @@ docker stop cf-probe && docker rm cf-probe
 
 容器内**已禁用自动更新**——容器的升级方式就是重新拉镜像，进程自己替换二进制没有意义。
 
+## 卸载
+
+```bash
+docker stop cf-probe && docker rm cf-probe
+# 可选：docker rmi ghcr.io/gg949/cfsm-agent:latest
+# 可选：rm -rf /opt/cf-probe   # 配置和流量计数
+```
+
+面板「删除服务器」弹窗的目标系统选 **Docker / Unraid** 会生成同一条命令。Unraid 用户也可以在 Docker 页直接停止并删除 `cf-probe` 容器，再按需删除对应 appdata 目录。
+
 ## 查看日志
 
 ```bash

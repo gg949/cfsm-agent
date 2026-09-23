@@ -514,7 +514,7 @@ func (a *Agent) buildMetrics(cfg Config, cpu string, netNow NetBytes, rxSpeed, t
 	probes := a.probes
 	a.mu.RUnlock()
 	b := a.basic
-	return Metrics{
+	m := Metrics{
 		CPU:          cpu,
 		RAMTotal:     uintString(b.MemTotalMB),
 		RAMUsed:      uintString(b.MemUsedMB),
@@ -559,6 +559,11 @@ func (a *Agent) buildMetrics(cfg Config, cpu string, netNow NetBytes, rxSpeed, t
 		LossNode3:    probeLossValue(cfg.Node3, probes.Node3),
 		LossNode4:    probeLossValue(cfg.Node4, probes.Node4),
 	}
+	for i := 0; i < extraProbeCount; i++ {
+		m.ExtraPing[i] = probeRTTValue(cfg.ExtraNodes[i], probes.Extra[i])
+		m.ExtraLoss[i] = probeLossValue(cfg.ExtraNodes[i], probes.Extra[i])
+	}
+	return m
 }
 
 func probeRTTValue(node string, r ProbeResult) any {
@@ -784,6 +789,7 @@ func valueOrZero[T ~int64 | ~uint64](value *T) T {
 func (a *Agent) networkWorker(ctx context.Context) {
 	var lastIP, lastProbe time.Time
 	var ctHistory, cuHistory, cmHistory, bdHistory, node1History, node2History, node3History, node4History rollingProbeHistory
+	var extraHistory [extraProbeCount]rollingProbeHistory
 	ticker := time.NewTicker(5 * time.Second)
 	defer ticker.Stop()
 	for {
@@ -810,6 +816,9 @@ func (a *Agent) networkWorker(ctx context.Context) {
 				node2History.add(now, probeHistoryKey(cfg.PingMode, cfg.Node2), measureProbe(cfg.PingMode, cfg.Node2, metricsProbeSampleCount, defaultMetricsTCPPort, a.log))
 				node3History.add(now, probeHistoryKey(cfg.PingMode, cfg.Node3), measureProbe(cfg.PingMode, cfg.Node3, metricsProbeSampleCount, defaultMetricsTCPPort, a.log))
 				node4History.add(now, probeHistoryKey(cfg.PingMode, cfg.Node4), measureProbe(cfg.PingMode, cfg.Node4, metricsProbeSampleCount, defaultMetricsTCPPort, a.log))
+				for i := 0; i < extraProbeCount; i++ {
+					extraHistory[i].add(now, probeHistoryKey(cfg.PingMode, cfg.ExtraNodes[i]), measureProbe(cfg.PingMode, cfg.ExtraNodes[i], metricsProbeSampleCount, defaultMetricsTCPPort, a.log))
+				}
 				snap.CT = ctHistory.snapshot(now)
 				snap.CU = cuHistory.snapshot(now)
 				snap.CM = cmHistory.snapshot(now)
@@ -818,6 +827,9 @@ func (a *Agent) networkWorker(ctx context.Context) {
 				snap.Node2 = node2History.snapshot(now)
 				snap.Node3 = node3History.snapshot(now)
 				snap.Node4 = node4History.snapshot(now)
+				for i := 0; i < extraProbeCount; i++ {
+					snap.Extra[i] = extraHistory[i].snapshot(now)
+				}
 				lastProbe = now
 				needUpdate = true
 			}
@@ -852,6 +864,11 @@ func (a *Agent) networkWorker(ctx context.Context) {
 				}
 				if snap.Node4 == (ProbeResult{}) {
 					snap.Node4 = a.probes.Node4
+				}
+				for i := 0; i < extraProbeCount; i++ {
+					if snap.Extra[i] == (ProbeResult{}) {
+						snap.Extra[i] = a.probes.Extra[i]
+					}
 				}
 				a.probes = snap
 				a.mu.Unlock()
@@ -893,7 +910,7 @@ func (a *Agent) applyRemoteConfigWithOptions(body []byte, headers http.Header, a
 	if len(body) == 0 {
 		return errors.New("empty body")
 	}
-	if len(body) > 1024 {
+	if len(body) > 4096 {
 		return errors.New("response too large")
 	}
 	raw := strings.TrimSpace(string(body))
@@ -928,6 +945,9 @@ func (a *Agent) applyRemoteConfigWithOptions(body []byte, headers http.Header, a
 		"tx_correction":       true,
 		"update":              true,
 	}
+	for i := 0; i < extraProbeCount; i++ {
+		allowed[fmt.Sprintf("node_%d", i+5)] = true
+	}
 	for key := range values {
 		if !allowed[key] {
 			return fmt.Errorf("unknown field %s", key)
@@ -938,6 +958,9 @@ func (a *Agent) applyRemoteConfigWithOptions(body []byte, headers http.Header, a
 		return fmt.Errorf("invalid update %s", update)
 	}
 	hasConfig := values.Has("collect_interval") || values.Has("report_interval") || values.Has("wss_report_interval") || values.Has("reset_day") || values.Has("schema_version") || values.Has("interface") || values.Has("connection_mode") || values.Has("ping_mode") || values.Has("node_1") || values.Has("node_2") || values.Has("node_3") || values.Has("node_4")
+	for i := 0; i < extraProbeCount && !hasConfig; i++ {
+		hasConfig = values.Has(fmt.Sprintf("node_%d", i+5))
+	}
 	hasCorrection := values.Has("rx_correction") || values.Has("tx_correction")
 	cfg := a.configSnapshot()
 	if !hasConfig {
@@ -970,7 +993,7 @@ func (a *Agent) applyRemoteConfigWithOptions(body []byte, headers http.Header, a
 	if !inIntSet(collect, 0, 1, 2, 5, 10) {
 		return fmt.Errorf("invalid collect_interval %d", collect)
 	}
-	if !inIntSet(report, 30, 60, 120, 180) {
+	if !inIntSet(report, 1, 3, 5, 10, 15, 20, 30, 60, 120, 180) {
 		return fmt.Errorf("invalid report_interval %d", report)
 	}
 	if wssReport < minWSSReportIntervalSec || wssReport > maxWSSReportIntervalSec {
@@ -1020,6 +1043,9 @@ func (a *Agent) applyRemoteConfigWithOptions(body []byte, headers http.Header, a
 		nextCfg.Node2 = values.Get("node_2")
 		nextCfg.Node3 = values.Get("node_3")
 		nextCfg.Node4 = values.Get("node_4")
+		for i := 0; i < extraProbeCount; i++ {
+			nextCfg.ExtraNodes[i] = values.Get(fmt.Sprintf("node_%d", i+5))
+		}
 		nextCfg.Interface = iface
 		nextCfg.ConnectionMode = connectionMode
 		nextCfg.PingMode = pingMode
@@ -1098,10 +1124,20 @@ func remoteConfigDiffers(cfg Config, values url.Values, collect, report, reset i
 		cfg.Node2 != values.Get("node_2") ||
 		cfg.Node3 != values.Get("node_3") ||
 		cfg.Node4 != values.Get("node_4") ||
+		extraNodesDiffer(cfg, values) ||
 		cfg.Interface != iface ||
 		cfg.ConnectionMode != connectionMode ||
 		cfg.PingMode != pingMode
 }
+func extraNodesDiffer(cfg Config, values url.Values) bool {
+	for i := 0; i < extraProbeCount; i++ {
+		if cfg.ExtraNodes[i] != values.Get(fmt.Sprintf("node_%d", i+5)) {
+			return true
+		}
+	}
+	return false
+}
+
 func inIntSet(v int, allowed ...int) bool {
 	for _, item := range allowed {
 		if v == item {

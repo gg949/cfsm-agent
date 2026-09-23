@@ -3,6 +3,7 @@ package cfprobe
 import (
 	"bufio"
 	"encoding/json"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -188,7 +189,7 @@ func parseNvidiaSMI(out string) []gpuMetric {
 }
 
 func metricsToMap(m Metrics) map[string]any {
-	return map[string]any{
+	out := map[string]any{
 		"cpu":            m.CPU,
 		"ram_total":      m.RAMTotal,
 		"ram_used":       m.RAMUsed,
@@ -233,6 +234,11 @@ func metricsToMap(m Metrics) map[string]any {
 		"loss_node_3":    m.LossNode3,
 		"loss_node_4":    m.LossNode4,
 	}
+	for i := 0; i < extraProbeCount; i++ {
+		out[fmt.Sprintf("ping_node_%d", i+5)] = m.ExtraPing[i]
+		out[fmt.Sprintf("loss_node_%d", i+5)] = m.ExtraLoss[i]
+	}
+	return out
 }
 
 func diskIOStatsFromCounters(prev, current DiskIOCounters, elapsedSeconds float64) DiskIOStats {

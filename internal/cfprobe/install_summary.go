@@ -36,6 +36,9 @@ func printProbeNodes(opts InstallOptions) {
 	printProbeNode(labelNode2, opts.Node2)
 	printProbeNode(labelNode3, opts.Node3)
 	printProbeNode(labelNode4, opts.Node4)
+	for i := 0; i < extraProbeCount; i++ {
+		printProbeNode(fmt.Sprintf("Node %d", i+5), opts.ExtraNodes[i])
+	}
 }
 
 func printProbeNode(label, value string) {

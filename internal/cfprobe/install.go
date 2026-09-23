@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -96,6 +97,13 @@ func Install(opts InstallOptions, version string) error {
 
 func mergeExplicitInstallConfig(dst *Config, src Config, explicit map[string]bool) {
 	for name := range explicit {
+		if strings.HasPrefix(name, "node_") {
+			n, err := strconv.Atoi(strings.TrimPrefix(name, "node_"))
+			if err == nil && n >= 5 && n <= extraProbeCount+4 {
+				dst.ExtraNodes[n-5] = src.ExtraNodes[n-5]
+				continue
+			}
+		}
 		switch name {
 		case "id":
 			dst.ServerID = src.ServerID

@@ -70,6 +70,9 @@ func parseInstallOptions(args []string) (InstallOptions, error) {
 	fs.StringVar(&opts.Node2, "node_2", "", "")
 	fs.StringVar(&opts.Node3, "node_3", "", "")
 	fs.StringVar(&opts.Node4, "node_4", "", "")
+	for i := 0; i < extraProbeCount; i++ {
+		fs.StringVar(&opts.ExtraNodes[i], fmt.Sprintf("node_%d", i+5), "", "")
+	}
 	fs.StringVar(&opts.Interface, "interface", "", "")
 	fs.StringVar(&opts.Interface, "interfaces", "", "")
 	fs.StringVar(&opts.Interface, "iface", "", "")

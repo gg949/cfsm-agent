@@ -7,20 +7,21 @@ const (
 	legacyAgentVersion          = "1.0.0"
 	maxTrafficCorrectionGB      = 1000000
 	autoUpdateDelay             = 60 * time.Second
-	configSchemaVersion         = "7"
+	configSchemaVersion         = "9"
 	defaultReportIntervalSec    = 60
 	defaultWSSReportIntervalSec = 2
 	minWSSReportIntervalSec     = 1
 	maxWSSReportIntervalSec     = 5
+	extraProbeCount             = 16
 	// maxPendingSamples 限制上报失败期间本地缓存的样本数。
 	// 采集按 collect_interval 持续入队，只有上报成功才清空；面板长期不可达时
 	// 若无上限会无限增长（实测约 8.6MB/天 @2s 采集）。超限丢弃最旧样本——
 	// 面板恢复后本次上报仍带最近 N 条，历史图表由面板侧按 received 时间补。
-	maxPendingSamples           = 512
-	connectionModeAuto          = "auto"
-	connectionModeHTTP          = "http"
-	pingModeTCP                 = "tcp"
-	pingModeICMP                = "icmp"
+	maxPendingSamples  = 512
+	connectionModeAuto = "auto"
+	connectionModeHTTP = "http"
+	pingModeTCP        = "tcp"
+	pingModeICMP       = "icmp"
 )
 
 type Config struct {
@@ -37,6 +38,7 @@ type Config struct {
 	Node2           string
 	Node3           string
 	Node4           string
+	ExtraNodes      [extraProbeCount]string
 	Interface       string
 	ResetDay        int
 	ConnectionMode  string
@@ -94,6 +96,7 @@ type ProbeSnapshot struct {
 	Node2 ProbeResult
 	Node3 ProbeResult
 	Node4 ProbeResult
+	Extra [extraProbeCount]ProbeResult
 }
 
 type Metrics struct {
@@ -140,6 +143,8 @@ type Metrics struct {
 	LossNode2    any
 	LossNode3    any
 	LossNode4    any
+	ExtraPing    [extraProbeCount]any
+	ExtraLoss    [extraProbeCount]any
 }
 
 type BasicStats struct {

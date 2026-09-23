@@ -135,6 +135,9 @@ func readConfig(path string) (Config, error) {
 	cfg.Node2 = values["NODE_2"]
 	cfg.Node3 = values["NODE_3"]
 	cfg.Node4 = values["NODE_4"]
+	for i := 0; i < extraProbeCount; i++ {
+		cfg.ExtraNodes[i] = values[fmt.Sprintf("NODE_%d", i+5)]
+	}
 	cfg.Interface, _ = normalizeInterfaceList(values["INTERFACE"])
 	cfg.ResetDay = parseIntDefault(values["RESET_DAY"], cfg.ResetDay)
 	cfg.ConnectionMode, _ = normalizeConnectionMode(values["CONNECTION_MODE"])
@@ -171,6 +174,9 @@ func writeConfig(path string, cfg Config) error {
 	writeKV("NODE_2", cfg.Node2)
 	writeKV("NODE_3", cfg.Node3)
 	writeKV("NODE_4", cfg.Node4)
+	for i := 0; i < extraProbeCount; i++ {
+		writeKV(fmt.Sprintf("NODE_%d", i+5), cfg.ExtraNodes[i])
+	}
 	writeKV("INTERFACE", cfg.Interface)
 	writeKV("RESET_DAY", strconv.Itoa(cfg.ResetDay))
 	writeKV("CONNECTION_MODE", cfg.ConnectionMode)

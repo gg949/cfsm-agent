@@ -2,13 +2,18 @@ name: Build and Publish Docker Image
 
 # 探针 Docker 镜像（Docker Hub 不需要——直接发 GHCR，与面板镜像同一 registry）
 # 触发方式：发 Release 自动构建（tag 即版本号）+ 手动触发
+#
+# latest 语义 = 当前正式版：
+#   - 正式 Release（非 prerelease，tag 不含 beta/rc）才同时打 :latest
+#   - pre-release / 带 beta、rc 的 tag 只打该版本标签，不会冲掉正式 latest
+#   - 手动 Run workflow 同样：version 含 beta/rc 不打 latest
 on:
   release:
     types: [published]
   workflow_dispatch:
     inputs:
       version:
-        description: '镜像标签（例如 v1.0.17 或 latest）'
+        description: '镜像标签（例如 v1.0.19 或 v1.0.19-beta1）'
         required: true
         default: latest
 
@@ -36,13 +41,29 @@ jobs:
       - name: Resolve version
         id: vars
         run: |
+          set -euo pipefail
           if [ "${{ github.event_name }}" = "release" ]; then
             VERSION="${{ github.event.release.tag_name }}"
+            PRERELEASE="${{ github.event.release.prerelease }}"
           else
             VERSION="${{ github.event.inputs.version }}"
+            PRERELEASE=false
+          fi
+          PUSH_LATEST=true
+          case "$VERSION" in
+            *beta*|*rc*|*BETA*|*RC*) PUSH_LATEST=false ;;
+          esac
+          if [ "$PRERELEASE" = "true" ]; then
+            PUSH_LATEST=false
+          fi
+          TAGS="${IMAGE}:${VERSION}"
+          if [ "$PUSH_LATEST" = "true" ]; then
+            TAGS="${TAGS},${IMAGE}:latest"
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
-          echo "构建版本: ${VERSION}"
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "push_latest=${PUSH_LATEST}" >> "$GITHUB_OUTPUT"
+          echo "构建版本: ${VERSION} latest=${PUSH_LATEST}"
 
       - name: Build binaries (linux only)
         env:
@@ -60,7 +81,6 @@ jobs:
           }
           build_one linux amd64
           build_one linux arm64
-          # Dockerfile 从构建上下文根 COPY 二进制，这里挪到根目录
           mv dist/cf-probe-linux-amd64 dist/cf-probe-linux-arm64 ./
           ls -lh cf-probe-linux-*
 
@@ -84,9 +104,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           provenance: false
-          tags: |
-            ${{ env.IMAGE }}:${{ steps.vars.outputs.version }}
-            ${{ env.IMAGE }}:latest
+          tags: ${{ steps.vars.outputs.tags }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
